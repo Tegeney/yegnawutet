@@ -1,0 +1,322 @@
+/* style.css */
+
+/* Mobile-First Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', 'Noto Sans Ethiopic', sans-serif;
+    background-color: #e8ecef;
+    background-image: url('https://www.transparenttextures.com/patterns/arabesque.png');
+    background-attachment: fixed;
+    min-height: 100vh;
+}
+
+body[data-theme="dark"] {
+    background-color: #181a1b !important;
+    color: #f8fafc !important;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+}
+
+/* Navbar */
+.navbar {
+    background: linear-gradient(90deg, #078930, #FFC107, #EF1C26);
+    padding: 0.75rem 1rem;
+}
+
+.navbar-brand,
+.nav-link {
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: #fff;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-title {
+    font-weight: 600;
+    color: #EF1C26;
+}
+
+/* Profile Card Specific */
+.card.profile-card {
+    border-left: 5px solid #078930;
+}
+
+/* Announcement Card Specific */
+.card.announcement-card {
+    border-top: 3px solid #FFC107;
+}
+
+/* Alerts */
+.alert-info {
+    background-color: #FFF9C4;
+    border-color: #FFC107;
+    color: #EF1C26;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Typography */
+.text-center {
+    text-align: center;
+}
+
+h1,
+h2,
+h3 {
+    font-weight: 700;
+    color: #078930;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #EF1C26;
+    border-color: #EF1C26;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #d11720;
+    border-color: #d11720;
+}
+
+/* Compact styles for student profile */
+.compact-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.compact-text {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+/* Table Styling for Exam Results */
+.table {
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.table thead {
+    background: linear-gradient(90deg, #078930, #FFC107);
+    color: #fff;
+}
+
+.table th,
+.table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 249, 196, 0.3);
+}
+
+/* Footer */
+footer {
+    background-color: #FFF9C4;
+    padding: 1rem;
+    font-size: 0.9rem;
+    color: #333333;
+}
+
+footer a {
+    color: #EF1C26;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+footer i {
+    font-size: 1rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+    .navbar-brand,
+    .nav-link {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+}
+
+/* Student Dashboard Card Title Customization */
+.card-title.mb-0.text-white {
+    background: linear-gradient(90deg, #078930 60%, #FFC107 100%);
+    color: #fff !important;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px 10px 0 0;
+    margin: -1rem -1rem 1rem -1rem;
+    box-shadow: 0 2px 8px rgba(7, 137, 48, 0.08);
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.card-title.mb-0.text-white i {
+    color: #FFF9C4;
+    margin-right: 0.7rem;
+    font-size: 1.3em;
+}
+
+@media (max-width: 576px) {
+    .card-title.mb-0.text-white {
+        font-size: 1rem;
+        padding: 0.6rem 0.7rem;
+    }
+}
+
+/* Student Photo Container - Proportional to card with outline */
+.student-photo-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto 1.5rem auto;
+    text-align: center;
+    position: relative;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.student-photo-container img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    border: 3px solid #078930;
+    padding: 4px;
+    background-color: #fff;
+    box-shadow: 0 0 0 1px rgba(7, 137, 48, 0.2);
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.student-photo-container img:hover {
+    transform: scale(1.05);
+    border-color: #FFC107;
+    box-shadow: 0 0 10px rgba(7, 137, 48, 0.3);
+}
+
+.table-responsive {
+    /* No custom style in your current CSS, but Bootstrap will make it scrollable on small screens */
+}
+
+.info-excel-table {
+    background: #fff;
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 1rem;
+}
+
+.info-excel-table th,
+.info-excel-table td {
+    border: 1px solid #bdbdbd !important;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.info-excel-table th {
+    background: #e2efda;
+    color: #215732;
+    font-weight: 700;
+}
+
+.info-excel-table tr:nth-child(even) td {
+    background: #f8fafc;
+}
+
+.theme-switcher {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 9999;
+    background: #fff;
+    color: #078930;
+    border: 2px solid #078930;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(7, 137, 48, 0.15);
+    transition: background 0.3s, color 0.3s;
+}
+
+.theme-switcher:hover {
+    background: #078930;
+    color: #fff;
+}
+
+.student-info-card {
+    background: linear-gradient(135deg, #f0f8ff, #e6f2ff);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.student-info-card .card-body {
+    background: linear-gradient(to bottom, #f9f9f9, #ffffff);
+    border-radius: 0 0 15px 15px;
+    padding: 1.5rem;
+}
+
+.school-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    letter-spacing: 0.5px;
+}
+
+@media (min-width: 768px) {
+    .school-brand {
+        font-size: 1.8rem;
+    }
+}
+
+/* Custom color for student info table headers */
+.table-borderless th.text-success {
+    background-color: #078930 !important;
+    color: white !important;
+    padding: 10px !important;
+    border-bottom: 1px solid #056b25 !important;
+}
+
+/* Adjust the table cell padding to match */
+.table-borderless td {
+    padding: 10px !important;
+}

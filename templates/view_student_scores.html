@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-gradient">
+                    <h5 class="card-title mb-0 text-white">
+                        <i class="fas fa-graduation-cap me-2"></i>የተማሪ ውጤቶች (Student Results)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <div class="accordion" id="studentsAccordion">
+                        {% for student in students %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading{{ student.id }}">
+                                    <button class="accordion-button {{ 'collapsed' if student.id != current_student_id else '' }}" 
+                                            type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#collapse{{ student.id }}" 
+                                            aria-expanded="{{ 'true' if student.id == current_student_id else 'false' }}" 
+                                            aria-controls="collapse{{ student.id }}">
+                                        <div class="d-flex justify-content-between w-100 align-items-center">
+                                            <span>
+                                                <i class="fas fa-user-graduate me-2"></i>
+                                                {{ student.full_name }}
+                                            </span>
+                                            <span class="badge bg-primary">
+                                                {{ student.username }}
+                                            </span>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ student.id }}" 
+                                     class="accordion-collapse collapse {{ 'show' if student.id == current_student_id else '' }}" 
+                                     aria-labelledby="heading{{ student.id }}" 
+                                     data-bs-parent="#studentsAccordion">
+                                    <div class="accordion-body">
+                                        {% if student.id in all_scores %}
+                                            {% for subject, exams in all_scores[student.id].items() %}
+                                                <div class="card mb-3">
+                                                    <div class="card-header bg-light">
+                                                        <h6 class="mb-0">{{ subject }}</h6>
+                                                    </div>
+                                                    <div class="card-body p-0">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-hover mb-0">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>የፈተና ስም (Exam Name)</th>
+                                                                        <th class="text-end">ውጤት (Score)</th>
+                                                                        <th>Actions</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {% for exam in exams %}
+                                                                        <tr>
+                                                                            <td>{{ exam['exam_name'] }}</td>
+                                                                            <td class="text-end">
+                                                                                <span class="badge bg-{{ 'success' if exam['score'] >= (exam['max_score']/2) else 'danger' }} rounded-pill">
+                                                                                    {{ "%.1f"|format(exam['score']) }}/{{ exam['max_score'] }}
+                                                                                </span>
+                                                                            </td>
+                                                                            <td>
+                                                                                <div class="btn-group">
+                                                                                    <a href="{{ url_for('update_score', score_id=exam['id']) }}" 
+                                                                                       class="btn btn-sm btn-outline-primary">
+                                                                                        <i class="fas fa-edit"></i>
+                                                                                    </a>
+                                                                                    <button type="button" 
+                                                                                            class="btn btn-sm btn-outline-danger"
+                                                                                            onclick="confirmDelete({{ exam['id'] }})">
+                                                                                        <i class="fas fa-trash"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                ለዚህ ተማሪ ምንም ውጤቶች አልተመዘገቡም (No scores recorded for this student)
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteScoreModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient">
+                <h5 class="modal-title">ውጤት ለመሰረዝ (Delete Score)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>እርግጠኛ ነዎት ይህን ውጤት መሰረዝ ይፈልጋሉ?</p>
+                <p>Are you sure you want to delete this score?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ሰርዝ (Cancel)</button>
+                <form id="deleteScoreForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">አዎ፣ ሰርዝ (Yes, Delete)</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteScoreModal'));
+    
+    function confirmDelete(scoreId) {
+        const form = document.getElementById('deleteScoreForm');
+        form.action = `/delete_score/${scoreId}`;
+        deleteModal.show();
+    }
+</script>
+
+<style>
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(25, 135, 84, 0.2);
+    }
+    
+    .bg-gradient {
+        background: linear-gradient(45deg, #198754, #20c997);
+        color: white;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .btn-group {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    tr:hover .btn-group {
+        opacity: 1;
+    }
+</style>
+{% endblock %} 

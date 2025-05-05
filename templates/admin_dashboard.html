@@ -1,0 +1,164 @@
+<!-- Master Password Reset Modal -->
+<div class="modal fade" id="masterPasswordModal" tabindex="-1" aria-labelledby="masterPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient">
+                <h5 class="modal-title text-white" id="masterPasswordModalLabel">Master Password Reset</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="masterPasswordForm">
+                    <div class="mb-3">
+                        <label for="master_password" class="form-label">Master Password</label>
+                        <input type="password" class="form-control" id="master_password" name="master_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Reset Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Password Reset Modal -->
+<div class="modal fade" id="contentPasswordModal" tabindex="-1" aria-labelledby="contentPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient">
+                <h5 class="modal-title text-white" id="contentPasswordModalLabel">Reset Content Authentication Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contentPasswordForm">
+                    <div class="mb-3">
+                        <label for="content_master_password" class="form-label">Master Password</label>
+                        <input type="password" class="form-control" id="content_master_password" name="master_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="content_username" class="form-label">Student Username</label>
+                        <input type="text" class="form-control" id="content_username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="content_new_password" class="form-label">New Content Password</label>
+                        <input type="password" class="form-control" id="content_new_password" name="new_password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="resetContentPasswordBtn">Reset Content Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Reset Section -->
+<div class="card mb-4">
+    <div class="card-header bg-gradient text-white">
+        <h5 class="mb-0">Password Management</h5>
+        <button class="btn btn-warning float-end" data-bs-toggle="modal" data-bs-target="#masterPasswordModal">
+            <i class="fas fa-key"></i> Master Reset
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="d-grid gap-2">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#masterPasswordModal">
+                Reset Master Password
+            </button>
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#contentPasswordModal">
+                Reset Content Authentication Password
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing forms...');
+    
+    // Handle master password form submission
+    document.getElementById('masterPasswordForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch('/admin/reset_password', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Password reset successful');
+                $('#masterPasswordModal').modal('hide');
+                this.reset();
+            }
+        })
+        .catch(error => {
+            alert('An error occurred: ' + error);
+        });
+    });
+
+    // Handle content password form submission
+    const contentPasswordForm = document.getElementById('contentPasswordForm');
+    const resetContentPasswordBtn = document.getElementById('resetContentPasswordBtn');
+    
+    if (contentPasswordForm) {
+        console.log('Content password form found');
+        
+        // Add click handler to the button
+        if (resetContentPasswordBtn) {
+            resetContentPasswordBtn.addEventListener('click', function(e) {
+                console.log('Reset content password button clicked');
+            });
+        }
+        
+        contentPasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Content password form submitted');
+            
+            const formData = new FormData(this);
+            const formDataObj = Object.fromEntries(formData);
+            console.log('Form data:', formDataObj);
+            
+            // Validate form data
+            if (!formDataObj.master_password || !formDataObj.username || !formDataObj.new_password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            fetch('/admin/reset_content_password', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    alert(data.message);
+                    $('#contentPasswordModal').modal('hide');
+                    this.reset();
+                } else {
+                    alert(data.error || 'An error occurred while resetting the content password');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred: ' + error);
+            });
+        });
+    } else {
+        console.error('Content password form not found');
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}Kaffa Catholic School's online portal for students and staff. Access educational resources, grades, and school information in Amharic and English.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}Kaffa Catholic School, Ethiopia education, Amharic, Catholic education, Kaffa region, Ethiopian school, student portal, online education{% endblock %}">
+    <meta name="author" content="Kaffa Catholic School">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:title" content="{% block page_title %}{% endblock %} | Kaffa Catholic School">
+    <meta property="og:description" content="{% block page_description %}Kaffa Catholic School's online portal for students and staff. Access educational resources, grades, and school information.{% endblock %}">
+    <meta property="og:image" content="{{ url_for('static', filename='images/logo.png', _external=True) }}">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="{{ request.url }}">
+    <meta name="twitter:title" content="{{ self.page_title() }} | Kaffa Catholic School">
+    <meta name="twitter:description" content="{{ self.page_description() }} | Kaffa Catholic School">
+    <meta name="twitter:image" content="{{ url_for('static', filename='images/logo.png', _external=True) }}">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ request.url }}">
+    
+    <title>{{ self.page_title() }} | Kaffa Catholic School</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <!-- Google Fonts for Amharic and modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Noto+Sans+Ethiopic:wght@400;700&subset=ethiopic" rel="stylesheet">
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Add loading="lazy" to non-critical images -->
+    <style>
+        img[loading="lazy"] {
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+        }
+        img[loading="lazy"].loaded {
+            opacity: 1;
+        }
+        /* Enable hardware acceleration for animations */
+        .card, .btn, .nav-link {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+        /* Optimize font loading */
+        @font-face {
+            font-family: 'Noto Sans Ethiopic';
+            font-display: swap;
+        }
+        @media (max-width: 768px) {
+            .navbar-nav {
+                padding: 1rem 0;
+            }
+            
+            .nav-item {
+                width: 100%;
+                margin: 0.25rem 0;
+            }
+            
+            .nav-link {
+                text-align: center;
+            }
+        }
+        @media (max-width: 576px) {
+            .table-responsive {
+                margin: 0 -15px;
+                padding: 0 15px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .table th, .table td {
+                white-space: nowrap;
+                min-width: 100px;
+            }
+            
+            .modal-dialog {
+                margin: 0.5rem;
+            }
+            
+            .modal-content {
+                border-radius: 10px;
+            }
+            
+            .modal-body {
+                padding: 1rem;
+            }
+        }
+        .img-fluid {
+            max-width: 100%;
+            height: auto;
+            will-change: transform;
+        }
+        @media (max-width: 576px) {
+            .student-photo-container {
+                max-width: 250px;
+            }
+        }
+    </style>
+    
+    <!-- Add Intersection Observer for lazy loading -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const lazyImages = document.querySelectorAll("img[loading='lazy']");
+            
+            if ("IntersectionObserver" in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const lazyImage = entry.target;
+                            // Only update src if data-src exists
+                            if (lazyImage.dataset.src) {
+                                lazyImage.src = lazyImage.dataset.src;
+                            }
+                            lazyImage.classList.add("loaded");
+                            imageObserver.unobserve(lazyImage);
+                        }
+                    });
+                });
+
+                lazyImages.forEach(image => {
+                    imageObserver.observe(image);
+                });
+            } else {
+                // Fallback for browsers that don't support IntersectionObserver
+                lazyImages.forEach(image => {
+                    if (image.dataset.src) {
+                        image.src = image.dataset.src;
+                    }
+                    image.classList.add("loaded");
+                });
+            }
+        });
+    </script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand school-brand" href="#">Kaffa Catholic Martyrs Memorial School No.2</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if current_user.is_authenticated %}
+                        {% if request.endpoint != 'content_auth' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        {% if current_user.role in ['student', 'teacher'] %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('chat') }}">
+                                <i class="fas fa-comments me-2"></i>መልዕክቶች 
+                                <span class="badge bg-success rounded-pill unread-count d-none">0</span>
+                            </a>
+                        </li>
+                        {% if current_user.role == 'student' %}
+                        <li class="nav-item">
+                            <button class="nav-link btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#changeContentPasswordModal">
+                                <i class="fas fa-key me-2"></i>የይለፍ ቃል ለመቀየር 
+                            </button>
+                        </li>
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('login') }}">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    {% block content %}
+    {% endblock %}
+
+    <!-- Footer -->
+    <footer class="text-center mt-5">
+        <p>© {{ current_year }} ተገኔ ተሰራ | <a href="https://t.me/tegene" target="_blank">Tegene</a> | 
+            <a href="https://facebook.com/school" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="https://twitter.com/school" aria-label="Twitter"><i class="bi bi-twitter"></i></a>
+        </p>
+    </footer>
+
+    <script>
+        // Function to update unread message count in navbar
+        function updateNavbarUnreadCount() {
+            fetch('/get_unread_count')
+                .then(response => response.json())
+                .then(data => {
+                    const navbarBadge = document.querySelector('.navbar .unread-count');
+                    if (navbarBadge) {
+                        if (data.count && data.count > 0) {
+                            navbarBadge.textContent = data.count;
+                            navbarBadge.classList.remove('d-none');
+                        } else {
+                            navbarBadge.classList.add('d-none');
+                            navbarBadge.textContent = '0';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating navbar unread count:', error);
+                    const navbarBadge = document.querySelector('.navbar .unread-count');
+                    if (navbarBadge) {
+                        navbarBadge.classList.add('d-none');
+                    }
+                });
+        }
+
+        // Update navbar unread count every 30 seconds
+        setInterval(updateNavbarUnreadCount, 30000);
+        // Initial update
+        updateNavbarUnreadCount();
+    </script>
+
+    <!-- Theme Switcher Button -->
+    <button class="theme-switcher" id="themeSwitcher">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    <!-- Theme Switcher Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeSwitcher = document.getElementById('themeSwitcher');
+            const icon = themeSwitcher.querySelector('i');
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                icon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+
+            // Theme switch handler
+            themeSwitcher.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                
+                // Update icon
+                icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+
+    <!-- Change Content Password Modal -->
+    <div class="modal fade" id="changeContentPasswordModal" tabindex="-1" aria-labelledby="changeContentPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-gradient text-white">
+                    <h5 class="modal-title" id="changeContentPasswordModalLabel">የይለፍ ቃል ለመቀየር (Change Password)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changeContentPasswordForm" method="POST" action="{{ url_for('change_content_password') }}">
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">የአሁኑ ይለፍ ቃል (Current Password)</label>
+                            <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">አዲስ ይለፍ ቃል (New Password)</label>
+                            <input type="password" class="form-control" id="newPassword" name="new_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">አዲሱን ይለፍ ቃል ያረጋግጡ (Confirm New Password)</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> እባክዎ ጠንካራ ይለፍ ቃል ይምረጡ እና ደህንነቱ የተጠበቀ እንዲሆን ያድርጉ።
+                            <br>
+                            Please choose a strong password and keep it secure.
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">ይለፍ ቃል ይቀይሩ (Change Password)</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ዝጋ (Close)</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Change Form Validation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('changeContentPasswordForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    if (newPassword !== confirmPassword) {
+                        alert('አዲሱ ይለፍ ቃል እና የማረጋገጫ ይለፍ ቃል አንድ አይነት አይደሉም።\nNew password and confirmation do not match.');
+                        return;
+                    }
+                    
+                    this.submit();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

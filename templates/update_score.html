@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient">
+                    <h5 class="card-title mb-0 text-white">
+                        <i class="fas fa-edit me-2"></i>ውጤት አሻሽል (Update Score)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('update_score', score_id=score.id) }}" id="updateScoreForm">
+                        <div class="mb-3">
+                            <label class="form-label">ተማሪ (Student)</label>
+                            <input type="text" class="form-control" value="{{ score.student.full_name }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">ትምህርት (Subject)</label>
+                            <input type="text" class="form-control" value="{{ score.subject }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">የፈተና ስም (Exam Name)</label>
+                            <input type="text" class="form-control" value="{{ score.exam_name }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">የፈተና ውጤት መጠን (Exam Score Type)</label>
+                            <input type="text" class="form-control" value="Out of {{ score.max_score }}" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="score" class="form-label">ውጤት (Score)</label>
+                            <input type="number" class="form-control" id="score" name="score" 
+                                   min="0" max="{{ score.max_score }}" step="0.1" 
+                                   value="{{ "%.1f"|format(score.score) }}" required>
+                            <small class="text-muted">Enter a number between 0 and {{ score.max_score }} (decimals allowed)</small>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>ውጤት አሻሽል (Update Score)
+                            </button>
+                            <a href="{{ url_for('view_student_scores', student_id=score.student_id) }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>ሰርዝ (Cancel)
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('updateScoreForm').addEventListener('submit', function(e) {
+    const scoreInput = document.getElementById('score');
+    const score = parseFloat(scoreInput.value);
+    const maxScore = {{ score.max_score }};
+    
+    if (isNaN(score)) {
+        e.preventDefault();
+        alert('እባክዎ ትክክለኛ ቁጥር ያስገቡ (Please enter a valid number)');
+        return;
+    }
+    
+    if (score < 0 || score > maxScore) {
+        e.preventDefault();
+        alert(`ውጤት ከ0 እስከ ${maxScore} መሆን አለበት (Score must be between 0 and ${maxScore})`);
+        return;
+    }
+});
+</script>
+{% endblock %} 

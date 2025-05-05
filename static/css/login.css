@@ -1,0 +1,492 @@
+/* login.css */
+
+/* Mobile-First Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans Ethiopic', 'Roboto', sans-serif;
+    background-color: #F5F5F5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-image: url('../images/pattern.png');
+    background-repeat: repeat;
+    background-size: 100px;
+    background-opacity: 0.05;
+}
+
+/* Mobile Header */
+.mobile-header {
+    background: linear-gradient(135deg, #078930, #FFC107);
+    color: #FFFFFF;
+    text-align: center;
+    padding: 1rem;
+    position: relative;
+}
+
+.mobile-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('../images/pattern.png') repeat;
+    opacity: 0.15;
+    z-index: 0;
+}
+
+.mobile-logo {
+    width: 60px;
+    height: auto;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.mobile-header h1 {
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.mobile-header h4 {
+    font-size: clamp(0.8rem, 3vw, 1rem);
+    color: #FFF9C4;
+    position: relative;
+    z-index: 1;
+}
+
+/* Login Container */
+.login-container {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    min-height: calc(100vh - 60px);
+}
+
+.login-container .row {
+    flex: 1;
+    margin: 0;
+}
+
+/* Left Section: Hero with Pattern Overlay */
+.left-section {
+    position: relative;
+    background: linear-gradient(135deg, rgba(7, 137, 48, 0.9), rgba(255, 193, 7, 0.9));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.left-section .overlay {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+}
+
+.left-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('../images/pattern.png') repeat;
+    opacity: 0.2;
+    z-index: 0;
+}
+
+.left-section h1 {
+    color: #FFFFFF;
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.left-section h4 {
+    color: #FFF9C4;
+    font-size: clamp(1rem, 3vw, 1.25rem);
+}
+
+.hero-img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid #FFF9C4;
+    margin-top: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.hero-img:hover {
+    transform: scale(1.05);
+}
+
+/* Mobile Hero Image */
+.mobile-hero-container {
+    text-align: center;
+    padding: 1rem 1.5rem 0;
+}
+
+.mobile-hero-img {
+    width: 100%;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #FFC107;
+    transition: transform 0.3s ease;
+}
+
+/* Form Logo */
+.form-logo {
+    display: block;
+    width: 80px;
+    height: auto;
+    margin: 0 auto 1rem;
+}
+
+/* Right Section: Login Form */
+.right-section {
+    background: #1A2525;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    position: relative;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 360px;
+    position: relative;
+    z-index: 1;
+    background: #FFFFFF;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.right-section h2 {
+    color: #078930;
+    font-size: clamp(1.4rem, 4vw, 1.75rem);
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-control {
+    border: 1px solid #CCCCCC;
+    border-radius: 8px;
+    padding: 0.6rem;
+    font-size: clamp(0.9rem, 2.5vw, 1rem);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #FFC107;
+    box-shadow: 0 0 6px rgba(255, 193, 7, 0.3);
+    outline: none;
+}
+
+.input-group .btn-outline-secondary {
+    border-color: #CCCCCC;
+    color: #666666;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #F8F9FA;
+    border-color: #CCCCCC;
+    color: #333333;
+}
+
+.btn-login {
+    background: linear-gradient(135deg, #078930, #FFC107);
+    border: none;
+    border-radius: 8px;
+    padding: 0.8rem;
+    font-size: clamp(0.9rem, 2.5vw, 1rem);
+    font-weight: 600;
+    color: #FFFFFF;
+    min-height: 44px;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn-login:hover,
+.btn-login:focus {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(7, 137, 48, 0.4);
+    outline: none;
+}
+
+.btn-forgot {
+    background: linear-gradient(135deg, #007BFF, #6F42C1);
+    border: none;
+    border-radius: 8px;
+    padding: 0.6rem;
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    font-weight: 600;
+    color: #FFFFFF;
+    min-height: 40px;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.btn-forgot:hover,
+.btn-forgot:focus {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+    outline: none;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 8px;
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
+    padding: 0.5rem;
+}
+
+.alert-success {
+    background-color: #D4EDDA;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #F8D7DA;
+    color: #721C24;
+}
+
+/* Footer */
+footer {
+    background-color: #FFF9C4;
+    padding: 0.8rem;
+    font-size: clamp(0.7rem, 2vw, 0.8rem);
+    color: #333333;
+    text-align: center;
+}
+
+footer a {
+    color: #EF1C26;
+    text-decoration: none;
+    margin: 0 0.3rem;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+footer i {
+    font-size: clamp(0.9rem, 2.5vw, 1rem);
+}
+
+/* Media Queries */
+
+/* Small Devices (576px and up) */
+@media (min-width: 576px) {
+    .mobile-header {
+        padding: 1.5rem;
+    }
+    .mobile-logo {
+        width: 80px;
+    }
+    .form-logo {
+        width: 100px;
+    }
+    .mobile-hero-img {
+        max-height: 180px;
+    }
+    .form-container {
+        max-width: 400px;
+    }
+    .right-section h2 {
+        font-size: clamp(1.6rem, 4vw, 1.9rem);
+    }
+    .form-control {
+        padding: 0.8rem;
+    }
+    .btn-login {
+        padding: 1rem;
+    }
+    .btn-forgot {
+        padding: 0.8rem;
+    }
+}
+
+/* Medium Devices (768px and up) */
+@media (min-width: 768px) {
+    .mobile-header {
+        padding: 2rem;
+    }
+    .mobile-logo {
+        width: 100px;
+    }
+    .form-logo {
+        width: 120px;
+    }
+    .mobile-hero-img {
+        max-height: 200px;
+    }
+    .right-section {
+        padding: 2rem;
+    }
+    .hero-img {
+        max-height: 250px;
+    }
+}
+
+/* Large Devices (992px and up) */
+@media (min-width: 992px) {
+    .mobile-header {
+        display: none;
+    }
+    .left-section {
+        display: flex !important;
+        padding: 2rem;
+    }
+    .hero-img {
+        max-height: 300px;
+    }
+    .right-section {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* Extra Large Devices (1200px and up) */
+@media (min-width: 1200px) {
+    .form-container {
+        max-width: 450px;
+    }
+    .form-logo {
+        width: 140px;
+    }
+    .left-section h1 {
+        font-size: clamp(2.5rem, 5vw, 3rem);
+    }
+    .left-section h4 {
+        font-size: clamp(1.2rem, 3vw, 1.5rem);
+    }
+    .hero-img {
+        max-height: 350px;
+    }
+}
+
+/* School Title Styles */
+.school-title {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 700;
+    color: #FFFFFF;
+    text-shadow: 
+        -2px -2px 0 #078930,
+        2px -2px 0 #078930,
+        -2px 2px 0 #078930,
+        2px 2px 0 #078930;
+    margin-bottom: 1rem;
+    letter-spacing: 1px;
+}
+
+.school-subtitle {
+    font-size: clamp(1.2rem, 4vw, 2rem);
+    color: #FFF9C4;
+    text-shadow: 
+        -1px -1px 0 #078930,
+        1px -1px 0 #078930,
+        -1px 1px 0 #078930,
+        1px 1px 0 #078930;
+    letter-spacing: 0.5px;
+}
+
+/* Navbar Brand Styles */
+.school-brand {
+    font-size: clamp(0.9rem, 2.5vw, 1.8rem);
+    font-weight: 700;
+    color: #FFFFFF;
+    text-shadow: 
+        -1px -1px 0 #078930,
+        1px -1px 0 #078930,
+        -1px 1px 0 #078930,
+        1px 1px 0 #078930;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border: 2px solid #078930;
+    border-radius: 4px;
+    background: rgba(7, 137, 48, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 576px) {
+    .school-brand {
+        font-size: clamp(0.8rem, 2vw, 1.2rem);
+        padding: 0.3rem 0.8rem;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    .school-brand {
+        font-size: clamp(1rem, 2.5vw, 1.4rem);
+        padding: 0.4rem 0.9rem;
+    }
+}
+
+@media (min-width: 769px) {
+    .school-brand {
+        font-size: clamp(1.2rem, 3vw, 1.8rem);
+        padding: 0.5rem 1rem;
+    }
+}
+
+.school-brand:hover {
+    transform: scale(1.05);
+    color: #FFFFFF;
+    background: rgba(7, 137, 48, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Card Title Styles */
+.card-title {
+    background: linear-gradient(135deg, #078930, #FFC107);
+    padding: 0.8rem 1.2rem;
+    border-radius: 8px 8px 0 0;
+    margin: -1rem -1rem 1rem -1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.card-title::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('../images/pattern.png') repeat;
+    opacity: 0.1;
+    z-index: 0;
+}
+
+.card-title i {
+    color: #FFF9C4;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 1;
+}
+
+.card-title span {
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block page_title %}እንኳን ደህና መጡ!{% endblock %}
+
+{% block page_description %}Login to Kaffa Catholic School's online portal for students and staff.{% endblock %}
+
+{% block og_title %}እኳን ደህና መጡ!{% endblock %}
+
+{% block twitter_title %}እኳን ደህና መጡ!{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+{% endblock %}
+
+{% block content %}
+    <!-- Mobile Header -->
+    <header class="mobile-header d-lg-none">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Kaffa Catholic School Logo" class="mobile-logo">
+        <h1 class="school-title">እንኳን ደህና መጡ!</h1>
+        <h4 class="school-subtitle">ካፋ ካቶሊክ ሰማዕታት መታሰብያ ት/ቤት ቁ.2</h4>
+    </header>
+    <!-- Main Content -->
+    <div class="login-container">
+        <div class="row g-0">
+            <!-- Left Section: Hero with Pattern Overlay -->
+            <div class="col-lg-6 left-section d-none d-lg-flex">
+                <div class="overlay">
+                    <h1 class="animate__animated animate__fadeInDown school-title">እንኳን ደህና መጡ!</h1>
+                    <h4 class="animate__animated animate__fadeInUp school-subtitle">ካፋ ካቶሊክ ሰማዕታት መታሰብያ ት/ቤት ቁ.2</h4>
+                    <img src="{{ url_for('static', filename='images/culture.jpg') }}" alt="Ethiopian Culture" class="hero-img" loading="lazy">
+                </div>
+            </div>
+            <!-- Right Section: Login Form -->
+            <div class="col-lg-6 col-12 right-section">
+                <div class="mobile-hero-container d-lg-none">
+                    <img src="{{ url_for('static', filename='images/culture.jpg') }}" alt="Ethiopian Culture" class="mobile-hero-img" loading="lazy">
+                </div>
+                <div class="form-container">
+                    <img src="{{ url_for('static', filename='images/logor.png') }}" alt="Kaffa Catholic School Logo" class="form-logo">
+                    <h2 class="text-center mb-4">ይግቡ</h2>
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    <!-- Login Form -->
+                    <form method="POST" aria-label="Login Form">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">የመጀመሪያ ስም(First Name) </label>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="ስም ያስገቡ" required aria-required="true">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">የይለፍ ቃል(Password) </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" placeholder="የይለፍ ቃል ያስገቡ" required aria-required="true">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-login w-100">ይግቡ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglePassword = document.querySelector('#togglePassword');
+            const password = document.querySelector('#password');
+            
+            if (togglePassword && password) {
+                togglePassword.addEventListener('click', function() {
+                    const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                    password.setAttribute('type', type);
+                    this.querySelector('i').classList.toggle('fa-eye');
+                    this.querySelector('i').classList.toggle('fa-eye-slash');
+                });
+            }
+        });
+    </script>
+{% endblock %}

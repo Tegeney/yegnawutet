@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card chat-card">
+                <div class="card-header bg-gradient">
+                    <h3 class="mb-0 text-white">
+                        {% if current_user.role == 'student' %}
+                            Chat with Teachers
+                        {% else %}
+                            Chat with Students
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body chat-list-body">
+                    <div class="list-group">
+                        {% for user in users %}
+                            <a href="{{ url_for('chat_room', room_id=user.id) }}" 
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center chat-user">
+                                <div>
+                                    {% if user.role == 'teacher' %}
+                                        <img src="{{ url_for('static', filename='images/OIP.jpg') }}" 
+                                             alt="User Icon" 
+                                             class="img-fluid rounded-circle me-3" 
+                                             style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% else %}
+                                        <img src="{{ url_for('static', filename='photos/' + user.username + '.jpg') }}" 
+                                             alt="{{ user.full_name }}" 
+                                             class="img-fluid rounded-circle me-3" 
+                                             style="width: 40px; height: 40px; object-fit: cover;">
+                                    {% endif %}
+                                    <span class="user-name">{{ user.full_name }}</span>
+                                </div>
+                                <span class="unread-badge badge bg-primary rounded-pill d-none" 
+                                      data-user-id="{{ user.id }}">0</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Dark theme colors */
+    :root {
+        --dark-bg: #1a1d21;
+        --darker-bg: #151719;
+        --chat-bg: #22262a;
+        --accent-color: #FF416C;
+        --text-primary: #e4e6eb;
+        --text-secondary: #b0b3b8;
+        --sent-message-bg: linear-gradient(45deg, #FF416C, #FF4B2B);
+        --received-message-bg: #2e343d;
+        --input-bg: #2e343d;
+        --border-color: rgba(255,255,255,0.1);
+    }
+
+    .chat-card {
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        height: 80vh;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--dark-bg);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .bg-gradient {
+        background: var(--darker-bg);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .chat-list-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0;
+        background: var(--chat-bg);
+    }
+
+    .chat-user {
+        transition: all 0.3s ease;
+        padding: 1rem;
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--dark-bg);
+        color: var(--text-primary);
+    }
+
+    .chat-user:hover {
+        background-color: rgba(255,65,108,0.1);
+        transform: translateX(5px);
+    }
+
+    .chat-user:last-child {
+        border-bottom: none;
+    }
+
+    .user-name {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+    }
+
+    .unread-badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .card-header h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Custom scrollbar */
+    .chat-list-body::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chat-list-body::-webkit-scrollbar-track {
+        background: var(--chat-bg);
+    }
+
+    .chat-list-body::-webkit-scrollbar-thumb {
+        background: var(--received-message-bg);
+        border-radius: 3px;
+    }
+
+    .chat-list-body::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+    }
+
+    .fa-user-circle {
+        color: var(--accent-color);
+        opacity: 0.9;
+        transition: all 0.3s ease;
+    }
+
+    .chat-user:hover .fa-user-circle {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    /* Message hover effects */
+    .message-content {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .message-content:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+</style>
+
+<script>
+    function updateUnreadCounts() {
+        fetch('/get_unread_count')
+            .then(response => response.json())
+            .then(data => {
+                // Always hide all badges first
+                const badges = document.querySelectorAll('.unread-badge');
+                badges.forEach(badge => {
+                    badge.classList.add('d-none');
+                    badge.textContent = '0';
+                });
+
+                // Only show badges if there are actual unread messages
+                if (data.count && data.count > 0) {
+                    badges.forEach(badge => {
+                        badge.textContent = data.count;
+                        badge.classList.remove('d-none');
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error updating unread counts:', error);
+                // Hide all badges on error
+                const badges = document.querySelectorAll('.unread-badge');
+                badges.forEach(badge => {
+                    badge.classList.add('d-none');
+                });
+            });
+    }
+
+    // Update unread counts every 30 seconds
+    setInterval(updateUnreadCounts, 30000);
+    // Initial update
+    updateUnreadCounts();
+
+    // Check for new messages every 5 seconds
+    setInterval(() => {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newMessages = doc.querySelector('.chat-messages')?.innerHTML;
+                if (newMessages) {
+                    document.querySelector('.chat-messages').innerHTML = newMessages;
+                }
+            });
+    }, 5000);
+</script>
+{% endblock %} 

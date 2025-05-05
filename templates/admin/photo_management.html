@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>Photo Storage Management</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Storage Statistics</h4>
+                    <div id="storageStats">
+                        Loading...
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h4>Cleanup Options</h4>
+                    <form id="cleanupForm">
+                        <div class="mb-3">
+                            <label for="days" class="form-label">Remove photos unused for days:</label>
+                            <input type="number" class="form-control" id="days" name="days" value="30" min="1">
+                        </div>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-broom"></i> Run Cleanup
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to update storage stats
+    function updateStats() {
+        fetch('/admin/photo_stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.stats) {
+                    const stats = data.stats;
+                    document.getElementById('storageStats').innerHTML = `
+                        <p>Total Photos: ${stats.file_count}</p>
+                        <p>Storage Used: ${stats.total_size_mb} MB</p>
+                    `;
+                }
+            });
+    }
+
+    // Handle cleanup form
+    document.getElementById('cleanupForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        fetch('/admin/cleanup_photos', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Cleanup completed successfully');
+                updateStats();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    });
+
+    // Initial stats update
+    updateStats();
+});
+</script>
+{% endblock %} 

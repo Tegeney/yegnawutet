@@ -1,0 +1,1214 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">የመምህር መቆጣጠሪያ (Teacher Dashboard)</h1>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-center gap-3 mb-4">
+        <a href="{{ url_for('add_score') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>አዲስ ውጤት (Add Score)
+        </a>
+        <a href="{{ url_for('view_student_scores', student_id=0) }}" class="btn btn-success">
+            <i class="fas fa-list me-2"></i>ሁሉንም ውጤቶች ይመልከቱ (View All Scores)
+        </a>
+        <a href="{{ url_for('post') }}" class="btn btn-success">
+            <i class="fas fa-bullhorn me-2"></i>አዲስ ማስታወቂያ (New Announcement)
+        </a>
+        <a href="{{ url_for('chat') }}" class="btn btn-info text-white">
+            <i class="fas fa-comments me-2"></i>መልዕክቶች (Messages)
+            <span class="badge bg-danger rounded-pill ms-2 unread-count d-none">0</span>
+        </a>
+        <button type="button" class="btn btn-warning text-white" data-bs-toggle="modal" data-bs-target="#masterPasswordModal">
+            <i class="fas fa-key me-2"></i>የይለፍ ቃል ለውጥ (Password Reset)
+        </button>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger">
+            <i class="fas fa-sign-out-alt me-2"></i>ውጣ (Logout)
+        </a>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="teacherTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold" id="announcements-tab" data-bs-toggle="tab" data-bs-target="#announcements" type="button" role="tab" aria-controls="announcements" aria-selected="true">
+                <i class="fas fa-bullhorn me-2 text-success"></i><span class="text-success">ማስታወቂያዎች (Announcements)</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="manage-scores-tab" data-bs-toggle="tab" data-bs-target="#manage-scores" type="button" role="tab" aria-controls="manage-scores" aria-selected="false">
+                <i class="fas fa-tasks me-2 text-success"></i><span class="text-success">ውጤቶችን ያስተዳድሩ (Manage Scores)</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="results-tab" data-bs-toggle="tab" data-bs-target="#results" type="button" role="tab" aria-controls="results" aria-selected="false">
+                <i class="fas fa-graduation-cap me-2 text-success"></i><span class="text-success">ውጤቶች (Results)</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab" aria-controls="chat" aria-selected="false">
+                <i class="fas fa-comments me-2 text-success"></i><span class="text-success">መልዕክቶች (Messages)</span>
+                <span class="badge bg-success rounded-pill ms-2 unread-count d-none">0</span>
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="teacherTabsContent">
+        <!-- Announcements Tab -->
+        <div class="tab-pane fade show active" id="announcements" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <!-- Post Announcement Form -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-gradient">
+                            <h5 class="card-title mb-0 text-white">
+                                <i class="fas fa-plus-circle me-2"></i>አዲስ ማስታወቂያ (New Announcement)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('post') }}">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">ርዕስ (Title)</label>
+                                    <input type="text" class="form-control" id="title" name="title" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="content" class="form-label">ይዘት (Content)</label>
+                                    <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-2"></i>ለጥፍ (Post)
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <!-- Recent Announcements -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-gradient">
+                            <h5 class="card-title mb-0 text-white">
+                                <i class="fas fa-history me-2"></i>የቅርብ ጊዜ ማስታወቂያዎች (Recent Announcements)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if posts %}
+                                {% for post in posts %}
+                                    <div class="announcement-item mb-3" data-post-id="{{ post.id }}">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ post.title }}</h6>
+                                                <p class="mb-1">{{ post.content }}</p>
+                                                <small class="text-muted">{{ post.posted_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                                            </div>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary edit-announcement" 
+                                                        data-post-id="{{ post.id }}"
+                                                        data-title="{{ post.title }}"
+                                                        data-content="{{ post.content }}">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger delete-announcement" 
+                                                        data-post-id="{{ post.id }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if not loop.last %}<hr>{% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted mb-0">ምንም ማስታወቂያዎች የሉም (No announcements yet)</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Scores Tab -->
+        <div class="tab-pane fade" id="manage-scores" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-gradient">
+                            <h5 class="card-title mb-0 text-white">
+                                <i class="fas fa-tasks me-2"></i>የተማሪ ውጤቶች አስተዳደር (Score Management)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Student Filter -->
+                            <div class="mb-4">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gradient text-white">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="studentSearch" 
+                                           placeholder="ተማሪ ፈልግ (Search Student)..." 
+                                           onkeyup="filterStudents()">
+                                </div>
+                            </div>
+
+                            <!-- Students List with Scores -->
+                            <div class="accordion" id="manageScoresAccordion">
+                                {% for student in students %}
+                                    <div class="accordion-item student-item">
+                                        <h2 class="accordion-header" id="manageHeading{{ student.id }}">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" 
+                                                    data-bs-target="#manageCollapse{{ student.id }}">
+                                                <div class="d-flex justify-content-between w-100 align-items-center">
+                                                    <span class="student-name">
+                                                        <i class="fas fa-user-graduate me-2"></i>
+                                                        {{ student.full_name }}
+                                                    </span>
+                                                    <span class="badge bg-primary">
+                                                        {{ student.username }}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        </h2>
+                                        <div id="manageCollapse{{ student.id }}" 
+                                             class="accordion-collapse collapse" 
+                                             data-bs-parent="#manageScoresAccordion">
+                                            <div class="accordion-body">
+                                                {% if student.id in all_scores %}
+                                                    {% for subject, exams in all_scores[student.id].items() %}
+                                                        <div class="card mb-3">
+                                                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                                                <h6 class="mb-0">{{ subject }}</h6>
+                                                                <button class="btn btn-sm btn-success" 
+                                                                        onclick="addNewScore('{{ student.id }}', '{{ subject }}')">
+                                                                    <i class="fas fa-plus me-1"></i> Add Score
+                                                                </button>
+                                                            </div>
+                                                            <div class="card-body p-0">
+                                                                <div class="table-responsive">
+                                                                    <table class="table table-hover mb-0">
+                                                                        <thead>
+                                                                            <tr>
+                                                                                <th>የፈተና ስም (Exam Name)</th>
+                                                                                <th class="text-end">ውጤት (Score)</th>
+                                                                                <th class="text-center">Actions</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            {% for exam in exams %}
+                                                                                <tr>
+                                                                                    <td>{{ exam['exam_name'] }}</td>
+                                                                                    <td class="text-end">
+                                                                                        <span class="badge bg-{{ 'success' if exam['score'] >= (exam['max_score']/2) else 'danger' }} rounded-pill">
+                                                                                            {{ "%.1f"|format(exam['score']) }}/{{ exam['max_score'] }}
+                                                                                        </span>
+                                                                                    </td>
+                                                                                    <td class="text-center">
+                                                                                        <div class="btn-group">
+                                                                                            <button class="btn btn-sm btn-outline-primary"
+                                                                                                    onclick="editScore('{{ exam['id'] }}', '{{ exam['exam_name'] }}', '{{ exam['score'] }}', '{{ exam['max_score'] }}')">
+                                                                                                <i class="fas fa-edit"></i>
+                                                                                            </button>
+                                                                                            <button class="btn btn-sm btn-outline-danger"
+                                                                                                    onclick="confirmDeleteScore('{{ exam['id'] }}')">
+                                                                                                <i class="fas fa-trash"></i>
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    </td>
+                                                                                </tr>
+                                                                            {% endfor %}
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <div class="alert alert-info">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        ለዚህ ተማሪ ምንም ውጤቶች አልተመዘገቡም (No scores recorded for this student)
+                                                        <button class="btn btn-sm btn-success float-end" 
+                                                                onclick="addNewScore('{{ student.id }}')">
+                                                            <i class="fas fa-plus me-1"></i> Add First Score
+                                                        </button>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Tab -->
+        <div class="tab-pane fade" id="results" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <!-- Add Result Form -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-gradient">
+                            <h5 class="card-title mb-0 text-white">
+                                <i class="fas fa-plus-circle me-2"></i>አዲስ ውጤት (New Result)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('add_score') }}">
+                                <div class="mb-3">
+                                    <label for="student_id" class="form-label">ተማሪ (Student)</label>
+                                    <select class="form-select" id="student_id" name="student_id" required>
+                                        <option value="">ተማሪ ይምረጡ (Select Student)</option>
+                                        {% for student in students %}
+                                            <option value="{{ student.id }}">{{ student.full_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="subject" class="form-label">ትምህርት (Subject)</label>
+                                    <input type="text" class="form-control" id="subject" name="subject" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="exam_name" class="form-label">የፈተና ስም (Exam Name)</label>
+                                    <input type="text" class="form-control" id="exam_name" name="exam_name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">የፈተና ውጤት መጠን (Exam Score Type)</label>
+                                    <div class="d-flex gap-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="score_type" id="score10" value="10" checked onchange="updateScoreMax(this.value)">
+                                            <label class="form-check-label" for="score10">
+                                                Out of 10
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="score_type" id="score60" value="60" onchange="updateScoreMax(this.value)">
+                                            <label class="form-check-label" for="score60">
+                                                Out of 60
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="score" class="form-label">ውጤት (Score)</label>
+                                    <input type="number" class="form-control" id="score" name="score" min="0" max="10" step="0.1" required>
+                                    <small class="text-muted">Enter a score between 0 and <span id="maxScore">10</span></small>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>ውጤት አስገባ (Save Result)
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <!-- View and Update Results -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-gradient">
+                            <h5 class="card-title mb-0 text-white">
+                                <i class="fas fa-list me-2"></i>የተማሪ ውጤቶች (Student Results)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="accordion" id="studentResultsAccordion">
+                                {% for student in students %}
+                                    {% if student.id in all_scores %}
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="heading{{ student.id }}">
+                                                <button class="accordion-button collapsed" type="button" 
+                                                        data-bs-toggle="collapse" 
+                                                        data-bs-target="#collapse{{ student.id }}">
+                                                    {{ student.full_name }} ({{ student.username }})
+                                                </button>
+                                            </h2>
+                                            <div id="collapse{{ student.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#studentResultsAccordion">
+                                                <div class="accordion-body p-0">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-hover mb-0">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>ትምህርት (Subject)</th>
+                                                                    <th>የፈተና ስም (Exam)</th>
+                                                                    <th class="text-end">ውጤት (Score)</th>
+                                                                    <th>Actions</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for subject, exams in all_scores[student.id].items() %}
+                                                                    {% for exam in exams %}
+                                                                        <tr>
+                                                                            <td>{{ subject }}</td>
+                                                                            <td>{{ exam['exam_name'] }}</td>
+                                                                            <td class="text-end">
+                                                                                <span class="badge bg-{{ 'success' if exam['score'] >= (exam['max_score']/2) else 'danger' }} rounded-pill">
+                                                                                    {{ "%.1f"|format(exam['score']) }}/{{ "%.1f"|format(exam['max_score']) }}
+                                                                                </span>
+                                                                            </td>
+                                                                            <td>
+                                                                                <a href="{{ url_for('update_score', score_id=exam['id']) }}" 
+                                                                                   class="btn btn-sm btn-outline-primary">
+                                                                                    <i class="fas fa-edit"></i>
+                                                                                </a>
+                                                                            </td>
+                                                                        </tr>
+                                                                    {% endfor %}
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Tab -->
+        <div class="tab-pane fade" id="chat" role="tabpanel">
+            <div class="row">
+                <div class="col-md-4">
+                    <!-- Student List for Chat -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-gradient">
+                            <h5 class="card-title mb-0 text-white">
+                                <i class="fas fa-users me-2"></i>ተማሪዎች (Students)
+                            </h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                {% for student in students %}
+                                    <a href="{{ url_for('chat_room', room_id=student.id) }}" 
+                                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-user-circle me-2"></i>
+                                            {{ student.full_name }}
+                                        </div>
+                                        <span class="badge bg-success rounded-pill student-unread-count d-none" 
+                                              data-student-id="{{ student.id }}">0</span>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <!-- Recent Messages Preview -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-gradient">
+                            <h5 class="card-title mb-0 text-white">
+                                <i class="fas fa-inbox me-2"></i>የቅርብ ጊዜ መልዕክቶች (Recent Messages)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="recentMessages">
+                                <p class="text-center text-muted">
+                                    <i class="fas fa-comments fa-3x mb-3"></i><br>
+                                    ለመልዕክት ልውውጥ ተማሪን ይምረጡ<br>
+                                    (Select a student to start chatting)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Profile Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-gradient">
+            <h5 class="card-title mb-0 text-white">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" 
+                     alt="Teacher Profile" 
+                     class="img-fluid rounded-circle me-2" 
+                     style="width: 30px; height: 30px; object-fit: cover;">
+                የመምህር መገለጫ (Teacher Profile)
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <img src="{{ url_for('static', filename='images/tege.jpg') }}" 
+                         alt="Teacher Photo" 
+                         class="img-fluid rounded-circle mb-3" 
+                         style="width: 150px; height: 150px; object-fit: cover;">
+                </div>
+                <div class="col-md-9">
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th class="text-success">ሙሉ ስም (Full Name):</th>
+                                <td class="fw-bold">{{ current_user.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-success">የተጠቃሚ ስም (Username):</th>
+                                <td class="fw-bold">{{ current_user.username }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-success">የስራ መደብ (Role):</th>
+                                <td class="fw-bold">መምህር (Teacher)</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Announcement Modal -->
+<div class="modal fade" id="editAnnouncementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient">
+                <h5 class="modal-title text-white">Edit Announcement</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editAnnouncementForm">
+                    <input type="hidden" id="editPostId">
+                    <div class="mb-3">
+                        <label for="editTitle" class="form-label">ርዕስ (Title)</label>
+                        <input type="text" class="form-control" id="editTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editContent" class="form-label">ይዘት (Content)</label>
+                        <textarea class="form-control" id="editContent" rows="5" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveAnnouncementEdit">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteAnnouncementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient">
+                <h5 class="modal-title text-white">Delete Announcement</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this announcement?</p>
+                <p class="text-danger"><strong>This action cannot be undone.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteAnnouncement">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Master Password Modal -->
+<div class="modal fade" id="masterPasswordModal" tabindex="-1" aria-labelledby="masterPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient">
+                <h5 class="modal-title text-white" id="masterPasswordModalLabel">Master Password Access</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="masterPasswordForm">
+                    <div class="mb-3">
+                        <label for="masterPassword" class="form-label">Master Password</label>
+                        <input type="password" class="form-control" id="masterPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="targetUsername" class="form-label">Select Student</label>
+                        <select class="form-select" id="targetUsername" required>
+                            <option value="">Choose a student...</option>
+                            {% for student in students %}
+                                <option value="{{ student.username }}">{{ student.full_name }} ({{ student.username }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Reset Password</button>
+                        <button type="button" class="btn btn-info" onclick="resetContentPassword()">Reset Content Password</button>
+                        <button type="button" class="btn btn-success" onclick="masterLogin()">Login as Student</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Score Modal -->
+<div class="modal fade" id="scoreModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient">
+                <h5 class="modal-title text-white" id="scoreModalTitle">Add/Edit Score</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scoreForm">
+                    <input type="hidden" id="scoreId">
+                    <input type="hidden" id="studentId">
+                    <div class="mb-3">
+                        <label for="modalSubject" class="form-label">ትምህርት (Subject)</label>
+                        <input type="text" class="form-control" id="modalSubject" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalExamName" class="form-label">የፈተና ስም (Exam Name)</label>
+                        <input type="text" class="form-control" id="modalExamName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">የፈተና ውጤት መጠን (Exam Score Type)</label>
+                        <div class="d-flex gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modalScoreType" value="10" checked>
+                                <label class="form-check-label">Out of 10</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modalScoreType" value="60">
+                                <label class="form-check-label">Out of 60</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalScore" class="form-label">ውጤት (Score)</label>
+                        <input type="number" class="form-control" id="modalScore" min="0" step="0.1" required>
+                        <small class="text-muted">Enter score between 0 and <span id="modalMaxScore">10</span></small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveScore()">Save Score</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Score Confirmation Modal -->
+<div class="modal fade" id="deleteScoreModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient">
+                <h5 class="modal-title text-white">Delete Score</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this score?</p>
+                <p class="text-danger"><strong>This action cannot be undone.</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="deleteScore()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap tabs
+        const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabEls.forEach(tabEl => {
+            new bootstrap.Tab(tabEl);
+        });
+
+        // Handle tab changes
+        const teacherTabs = document.getElementById('teacherTabs');
+        teacherTabs.addEventListener('shown.bs.tab', function (event) {
+            const target = event.target;
+            const tabId = target.getAttribute('data-bs-target');
+            
+            // Update active state
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            target.classList.add('active');
+            
+            // Show corresponding content
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+            document.querySelector(tabId).classList.add('show', 'active');
+        });
+
+        // Initialize modals
+        const editModal = document.getElementById('editAnnouncementModal');
+        const deleteModal = document.getElementById('deleteAnnouncementModal');
+        const editAnnouncementModal = new bootstrap.Modal(editModal);
+        const deleteAnnouncementModal = new bootstrap.Modal(deleteModal);
+        let currentPostId = null;
+
+        // Event delegation for edit buttons
+        document.body.addEventListener('click', function(e) {
+            const editButton = e.target.closest('.edit-announcement');
+            if (editButton) {
+                e.preventDefault();
+                const postId = editButton.getAttribute('data-post-id');
+                const title = editButton.getAttribute('data-title');
+                const content = editButton.getAttribute('data-content');
+
+                document.getElementById('editPostId').value = postId;
+                document.getElementById('editTitle').value = title;
+                document.getElementById('editContent').value = content;
+
+                editAnnouncementModal.show();
+            }
+
+            // Handle delete button clicks
+            const deleteButton = e.target.closest('.delete-announcement');
+            if (deleteButton) {
+                e.preventDefault();
+                currentPostId = deleteButton.getAttribute('data-post-id');
+                deleteAnnouncementModal.show();
+            }
+        });
+
+        // Save edited announcement
+        document.getElementById('saveAnnouncementEdit').addEventListener('click', async function() {
+            const postId = document.getElementById('editPostId').value;
+            const title = document.getElementById('editTitle').value;
+            const content = document.getElementById('editContent').value;
+
+            if (!postId || !title || !content) {
+                showAlert('Please fill in all fields', 'danger');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/edit_announcement/${postId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ title, content })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const announcementItem = document.querySelector(`.announcement-item[data-post-id="${postId}"]`);
+                    if (announcementItem) {
+                        announcementItem.querySelector('h6').textContent = title;
+                        announcementItem.querySelector('p').textContent = content;
+                        
+                        // Update the data attributes
+                        const editBtn = announcementItem.querySelector('.edit-announcement');
+                        if (editBtn) {
+                            editBtn.setAttribute('data-title', title);
+                            editBtn.setAttribute('data-content', content);
+                        }
+                    }
+                    editAnnouncementModal.hide();
+                    showAlert('ማስታወቂያው በተሳካ ሁኔታ ተዘምኗል (Announcement updated successfully)', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to update announcement');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'ማስታወቂያውን ማዘመን አልተቻለም (Failed to update announcement)', 'danger');
+            }
+        });
+
+        // Confirm delete
+        document.getElementById('confirmDeleteAnnouncement').addEventListener('click', async function() {
+            if (!currentPostId) return;
+
+            try {
+                const response = await fetch(`/delete_announcement/${currentPostId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const announcementItem = document.querySelector(`.announcement-item[data-post-id="${currentPostId}"]`);
+                    if (announcementItem) {
+                        // Handle separators
+                        const nextSibling = announcementItem.nextElementSibling;
+                        const prevSibling = announcementItem.previousElementSibling;
+                        
+                        if (nextSibling && nextSibling.tagName.toLowerCase() === 'hr') {
+                            nextSibling.remove();
+                        } else if (prevSibling && prevSibling.tagName.toLowerCase() === 'hr') {
+                            prevSibling.remove();
+                        }
+
+                        // Remove the announcement
+                        announcementItem.remove();
+
+                        // Check if there are no more announcements
+                        const remainingAnnouncements = document.querySelectorAll('.announcement-item');
+                        if (remainingAnnouncements.length === 0) {
+                            const cardBody = document.querySelector('.card-body');
+                            if (cardBody) {
+                                cardBody.innerHTML = '<p class="text-muted mb-0">ምንም ማስታወቂያዎች የሉም (No announcements yet)</p>';
+                            }
+                        }
+                    }
+                    deleteAnnouncementModal.hide();
+                    showAlert('ማስታወቂያው በተሳራ ሁኔታ ተሰርዟል (Announcement deleted successfully)', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to delete announcement');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message || 'ማስታወቂያውን መሰረዝ አልተቻለም (Failed to delete announcement)', 'danger');
+            } finally {
+                currentPostId = null;
+            }
+        });
+
+        // Helper function to show alerts
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            const container = document.querySelector('.container');
+            if (container) {
+                container.insertAdjacentElement('afterbegin', alertDiv);
+                setTimeout(() => {
+                    if (alertDiv && alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Add master password button to the header of the first card (New Announcement)
+        const firstCardHeader = document.querySelector('#announcements .card-header');
+        if (firstCardHeader) {
+            firstCardHeader.insertAdjacentHTML('beforeend', `
+                <button class="btn btn-warning float-end ms-2" data-bs-toggle="modal" data-bs-target="#masterPasswordModal">
+                    <i class="fas fa-key"></i> Master Access
+                </button>
+            `);
+        }
+    });
+
+    // Initialize Select2 for better dropdown experience
+    $(document).ready(function() {
+        $('#student_id').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'ተማሪ ይምረጡ (Select Student)',
+            allowClear: true
+        });
+
+        $('#subject').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'ትምህርት ይምረጡ (Select Subject)',
+            allowClear: true
+        });
+
+        $('#exam_name').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'የፈተና ስም ይምረጡ (Select Exam Type)',
+            allowClear: true
+        });
+
+        // Initialize Select2 for the master password modal student selection
+        $('#targetUsername').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Select a student',
+            allowClear: true,
+            dropdownParent: $('#masterPasswordModal') // This ensures dropdown shows properly in modal
+        });
+    });
+
+    // Handle password reset
+    document.getElementById('masterPasswordForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData();
+        formData.append('master_password', document.getElementById('masterPassword').value);
+        formData.append('username', document.getElementById('targetUsername').value);
+        formData.append('new_password', document.getElementById('newPassword').value);
+        
+        fetch('/admin/reset_password', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Password reset successful');
+                $('#masterPasswordModal').modal('hide');
+                document.getElementById('masterPasswordForm').reset();
+            }
+        })
+        .catch(error => {
+            alert('An error occurred: ' + error);
+        });
+    });
+
+    // Function to login as student with master password
+    function masterLogin() {
+        const masterPassword = document.getElementById('masterPassword').value;
+        const username = document.getElementById('targetUsername').value;
+        
+        if (!masterPassword || !username) {
+            alert('Master password and username are required');
+            return;
+        }
+        
+        fetch('/admin/master_login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                master_password: masterPassword,
+                username: username
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Logging in as student...');
+                window.location.href = '/dashboard';
+            }
+        })
+        .catch(error => {
+            alert('An error occurred: ' + error);
+        });
+    }
+
+    function updateScoreMax(maxValue) {
+        const scoreInput = document.getElementById('score');
+        const maxScoreSpan = document.getElementById('maxScore');
+        scoreInput.max = maxValue;
+        maxScoreSpan.textContent = maxValue;
+        if (parseFloat(scoreInput.value) > maxValue) {
+            scoreInput.value = maxValue;
+        }
+    }
+
+    // Function to reset content password
+    function resetContentPassword() {
+        const masterPassword = document.getElementById('masterPassword').value;
+        const username = document.getElementById('targetUsername').value;
+        const newPassword = document.getElementById('newPassword').value;
+        
+        if (!masterPassword || !username || !newPassword) {
+            alert('All fields are required');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('master_password', masterPassword);
+        formData.append('username', username);
+        formData.append('new_password', newPassword);
+        
+        fetch('/admin/reset_content_password', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                $('#masterPasswordModal').modal('hide');
+                document.getElementById('masterPasswordForm').reset();
+            } else {
+                alert(data.error || 'An error occurred while resetting the content password');
+            }
+        })
+        .catch(error => {
+            alert('An error occurred: ' + error);
+        });
+    }
+
+    // Initialize modals
+    const scoreModal = new bootstrap.Modal(document.getElementById('scoreModal'));
+    const deleteScoreModal = new bootstrap.Modal(document.getElementById('deleteScoreModal'));
+    let currentScoreId = null;
+
+    function filterStudents() {
+        const searchText = document.getElementById('studentSearch').value.toLowerCase();
+        const studentItems = document.querySelectorAll('.student-item');
+        
+        studentItems.forEach(item => {
+            const studentName = item.querySelector('.student-name').textContent.toLowerCase();
+            if (studentName.includes(searchText)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    function addNewScore(studentId, subject = '') {
+        document.getElementById('scoreModalTitle').textContent = 'Add New Score';
+        document.getElementById('scoreId').value = '';
+        document.getElementById('studentId').value = studentId;
+        document.getElementById('modalSubject').value = subject;
+        document.getElementById('modalExamName').value = '';
+        document.getElementById('modalScore').value = '';
+        document.querySelector('input[name="modalScoreType"][value="10"]').checked = true;
+        updateModalMaxScore(10);
+        scoreModal.show();
+    }
+
+    function editScore(scoreId, examName, score, maxScore) {
+        document.getElementById('scoreModalTitle').textContent = 'Edit Score';
+        document.getElementById('scoreId').value = scoreId;
+        document.getElementById('modalExamName').value = examName;
+        document.getElementById('modalScore').value = score;
+        document.querySelector(`input[name="modalScoreType"][value="${maxScore}"]`).checked = true;
+        updateModalMaxScore(maxScore);
+        scoreModal.show();
+    }
+
+    function updateModalMaxScore(maxValue) {
+        const scoreInput = document.getElementById('modalScore');
+        const maxScoreSpan = document.getElementById('modalMaxScore');
+        scoreInput.max = maxValue;
+        maxScoreSpan.textContent = maxValue;
+        if (parseFloat(scoreInput.value) > maxValue) {
+            scoreInput.value = maxValue;
+        }
+    }
+
+    function confirmDeleteScore(scoreId) {
+        currentScoreId = scoreId;
+        deleteScoreModal.show();
+    }
+
+    function deleteScore() {
+        if (!currentScoreId) return;
+        
+        fetch(`/delete_score/${currentScoreId}`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to delete score');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the score');
+        })
+        .finally(() => {
+            deleteScoreModal.hide();
+            currentScoreId = null;
+        });
+    }
+
+    function saveScore() {
+        const form = document.getElementById('scoreForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const scoreId = document.getElementById('scoreId').value;
+        const studentId = document.getElementById('studentId').value;
+        const subject = document.getElementById('modalSubject').value;
+        const examName = document.getElementById('modalExamName').value;
+        const score = document.getElementById('modalScore').value;
+        const maxScore = document.querySelector('input[name="modalScoreType"]:checked').value;
+
+        const url = scoreId ? `/update_score/${scoreId}` : '/add_score';
+        const method = scoreId ? 'PUT' : 'POST';
+
+        const formData = new FormData();
+        formData.append('student_id', studentId);
+        formData.append('subject', subject);
+        formData.append('exam_name', examName);
+        formData.append('score', score);
+        formData.append('score_type', maxScore);
+
+        fetch(url, {
+            method: method,
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Failed to save score');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the score');
+        })
+        .finally(() => {
+            scoreModal.hide();
+        });
+    }
+
+    // Add event listeners for score type radio buttons
+    document.querySelectorAll('input[name="modalScoreType"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            updateModalMaxScore(this.value);
+        });
+    });
+</script>
+
+<!-- Add Select2 CSS and JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+    .bg-gradient {
+        background: linear-gradient(45deg, #FF416C, #FF4B2B);
+        color: white;
+    }
+
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-color: #198754;
+        transform: translateY(-2px);
+    }
+
+    .nav-tabs .nav-link.active {
+        border-bottom: 2px solid #198754;
+        font-weight: bold;
+        background-color: rgba(25, 135, 84, 0.05);
+    }
+
+    .card {
+        border: none;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .list-group-item {
+        border: none;
+        border-bottom: 1px solid rgba(0,0,0,0.125);
+        padding: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .list-group-item:hover {
+        background-color: rgba(255,65,108,0.1);
+        transform: translateX(5px);
+    }
+
+    .announcement-item {
+        transition: all 0.3s ease;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+    }
+
+    .announcement-item:hover {
+        background-color: rgba(0,0,0,0.05);
+    }
+
+    .btn-group {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .announcement-item:hover .btn-group {
+        opacity: 1;
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 15px;
+    }
+
+    .modal-header {
+        border-radius: 15px 15px 0 0;
+    }
+
+    .btn-outline-primary, .btn-outline-danger {
+        padding: 0.25rem 0.5rem;
+    }
+
+    .btn-outline-primary:hover, .btn-outline-danger:hover {
+        transform: translateY(-1px);
+    }
+
+    .student-item {
+        transition: all 0.3s ease;
+    }
+
+    .student-item:hover {
+        background-color: rgba(25, 135, 84, 0.05);
+    }
+
+    .btn-group {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    tr:hover .btn-group {
+        opacity: 1;
+    }
+
+    .input-group-text {
+        border: none;
+    }
+
+    #studentSearch {
+        border-left: none;
+        box-shadow: none;
+    }
+
+    #studentSearch:focus {
+        border-color: #ced4da;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+</style>
+{% endblock %}

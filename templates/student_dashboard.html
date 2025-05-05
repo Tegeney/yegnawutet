@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">የተማሪ መቆጣጠሪያ (Student Dashboard)</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row">
+        <!-- Student Information Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100 student-info-card">
+                <div class="card-header bg-gradient">
+                    <h5 class="card-title mb-0 text-white">
+                        <i class="fas fa-user-graduate me-2"></i>የተማሪ መረጃ (Student Information)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if student_data and student_data.student %}
+                        <div class="student-photo-container">
+                            {% if current_user.profile_image %}
+                                <img src="{{ current_user.profile_image }}" alt="Student Photo">
+                            {% elif student_data.student.photo %}
+                                <img src="{{ student_data.student.photo }}" alt="Student Photo">
+                                <div class="text-muted small mt-2">Remote photo: {{ student_data.student.photo }}</div>
+                            {% else %}
+                                <img src="https://assets.sw.ministry.et/2017/student-photo/default.jpg" alt="Student Photo">
+                                <div class="text-muted small mt-2">Using default photo</div>
+                            {% endif %}
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th class="text-success">ሙሉ ስም (Full Name):</th>
+                                    <td class="fw-bold student-name">{{ student_data.student.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-success">ዕድሜ (Age):</th>
+                                    <td class="fw-bold">{{ student_data.student.age }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-success">ዜግነት (Nationality):</th>
+                                    <td class="fw-bold">{{ student_data.student.nationality }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-success">ትምህርት ቤት (School):</th>
+                                    <td class="fw-bold">{{ student_data.student.school }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-success">ወረዳ (Woreda):</th>
+                                    <td class="fw-bold">{{ student_data.student.woreda }}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-success">ዞን (Zone):</th>
+                                    <td class="fw-bold">{{ student_data.student.zone }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center">
+                            <div class="d-flex align-items-center justify-content-center mb-3">
+                                <i class="fas fa-user-graduate fa-4x text-muted"></i>
+                            </div>
+                            <p class="text-muted mb-0">የተማሪ መረጃ አልተገኘም (Student information not available)</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Exam Results Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-gradient">
+                    <h5 class="card-title mb-0 text-white">
+                        <i class="fas fa-graduation-cap me-2"></i>የፈተና ውጤቶች (Exam Results)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if scores_by_subject and scores_by_subject|length > 0 %}
+                        <div class="accordion" id="examAccordion">
+                            {% for subject, exams in scores_by_subject.items() %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading{{ loop.index }}">
+                                        <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#collapse{{ loop.index }}"
+                                                aria-expanded="{{ 'true' if loop.first else 'false' }}"
+                                                aria-controls="collapse{{ loop.index }}">
+                                            {{ subject }}
+                                        </button>
+                                    </h2>
+                                    <div id="collapse{{ loop.index }}" 
+                                         class="accordion-collapse collapse {% if loop.first %}show{% endif %}"
+                                         aria-labelledby="heading{{ loop.index }}"
+                                         data-bs-parent="#examAccordion">
+                                        <div class="accordion-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>የፈተና ስም (Exam Name)</th>
+                                                            <th class="text-end">ውጤት (Score)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for exam in exams %}
+                                                            <tr>
+                                                                <td>{{ exam['exam_name'] }}</td>
+                                                                <td class="text-end">
+                                                                    <span class="badge bg-{{ 'success' if exam['score'] >= (exam['max_score']/2) else 'danger' }} rounded-pill">
+                                                                        {{ exam['score'] }}/{{ exam['max_score'] }}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>ምንም የፈተና ውጤቶች የሉም (No exam results available)
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcements Card -->
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient">
+                    <h5 class="card-title mb-0 text-white">
+                        <i class="fas fa-bullhorn me-2"></i>ማስታወቂያዎች (Announcements)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if teacher_posts %}
+                        {% for post in teacher_posts %}
+                            <div class="announcement-item mb-3">
+                                <h5 class="mb-1">{{ post.title }}</h5>
+                                <p class="mb-1">{{ post.content }}</p>
+                                <small class="text-muted">{{ post.posted_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            {% if not loop.last %}<hr>{% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted mb-0">ምንም ማስታወቂያዎች የሉም (No announcements available)</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-gradient {
+        background: linear-gradient(45deg, #FF416C, #FF4B2B);
+        color: white;
+    }
+
+    .card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(255, 65, 108, 0.1);
+        color: #FF416C;
+    }
+
+    .accordion-button:focus {
+        border-color: #FF416C;
+        box-shadow: 0 0 0 0.25rem rgba(255, 65, 108, 0.25);
+    }
+
+    .announcement-item {
+        padding: 1rem;
+        border-radius: 10px;
+        transition: background-color 0.3s ease;
+    }
+
+    .announcement-item:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .table th {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .accordion-item {
+        border: none;
+        margin-bottom: 0.5rem;
+    }
+
+    .accordion-button {
+        border-radius: 10px;
+        padding: 1rem;
+        font-weight: 600;
+    }
+
+    .table-responsive {
+        border-radius: 10px;
+    }
+
+    .table td, .table th {
+        padding: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .col-md-4.text-center {
+            margin-bottom: 2rem;
+        }
+    }
+
+    /* Student photo styles */
+    .student-info-card .student-photo-container {
+        padding: 0.75rem;
+        width: 80%;
+        max-width: 250px;
+        position: relative;
+    }
+
+    .student-info-card .student-photo-container::after {
+        content: '';
+        position: absolute;
+        top: -5px;
+        left: -5px;
+        right: -5px;
+        bottom: -5px;
+        border: 1px dashed #FFC107;
+        border-radius: 5px;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .student-info-card .student-photo-container img {
+        max-width: 100%;
+        border-width: 3px;
+        object-position: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    @media (max-width: 576px) {
+        .student-info-card .student-photo-container {
+            padding: 0.5rem;
+            width: 70%;
+            max-width: 200px;
+        }
+    }
+</style>
+
+<!-- Chat Tab -->
+<div class="tab-pane fade" id="chat" role="tabpanel">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Teacher List for Chat -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient">
+                    <h5 class="card-title mb-0 text-white">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" 
+                             alt="Chat Icon" 
+                             class="img-fluid rounded-circle me-2" 
+                             style="width: 30px; height: 30px; object-fit: cover;">
+                        መልዕክቶች (Messages)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for teacher in teachers %}
+                            <a href="{{ url_for('chat_room', room_id=teacher.id) }}" 
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <img src="{{ url_for('static', filename='images/tege.jpg') }}" 
+                                         alt="Teacher Icon" 
+                                         class="img-fluid rounded-circle me-2" 
+                                         style="width: 40px; height: 40px; object-fit: cover;">
+                                    {{ teacher.full_name }}
+                                </div>
+                                <span class="badge bg-success rounded-pill teacher-unread-count d-none" 
+                                      data-teacher-id="{{ teacher.id }}">0</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <!-- Recent Messages Preview -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient">
+                    <h5 class="card-title mb-0 text-white">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" 
+                             alt="Messages Icon" 
+                             class="img-fluid rounded-circle me-2" 
+                             style="width: 30px; height: 30px; object-fit: cover;">
+                        የቅርብ ጊዜ መልዕክቶች (Recent Messages)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recentMessages">
+                        <p class="text-center text-muted">
+                            <img src="{{ url_for('static', filename='images/logo.png') }}" 
+                                 alt="Chat Icon" 
+                                 class="img-fluid rounded-circle mb-3" 
+                                 style="width: 80px; height: 80px; object-fit: cover;">
+                            <br>
+                            ለመልዕክት ልውውጥ መምህርን ይምረጡ<br>
+                            (Select a teacher to start chatting)
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Content Password Modal -->
+<div class="modal fade" id="changeContentPasswordModal" tabindex="-1" aria-labelledby="changeContentPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient text-white">
+                <h5 class="modal-title" id="changeContentPasswordModalLabel">የይለፍ ቃል ለመቀየር (Change Password)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changeContentPasswordForm" method="POST" action="{{ url_for('change_content_password') }}">
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">የአሁኑ ይለፍ ቃል (Current Password)</label>
+                        <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">አዲስ ይለፍ ቃል (New Password)</label>
+                        <input type="password" class="form-control" id="newPassword" name="new_password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">አዲሱን ይለፍ ቃል ያረጋግጡ (Confirm New Password)</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> እባክዎ ጠንካራ ይለፍ ቃል ይምረጡ እና ደህንነቱ የተጠበቀ እንዲሆን ያድርጉ።
+                        <br>
+                        Please choose a strong password and keep it secure.
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">ይለፍ ቃል ይቀይሩ (Change Password)</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ዝጋ (Close)</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('changeContentPasswordForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (newPassword !== confirmPassword) {
+                    alert('አዲሱ ይለፍ ቃል እና የማረጋገጫ ይለፍ ቃል አንድ አይነት አይደሉም።\nNew password and confirmation do not match.');
+                    return;
+                }
+                
+                this.submit();
+            });
+        }
+    });
+</script>
+{% endblock %}

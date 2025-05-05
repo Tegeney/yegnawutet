@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="auth-container">
+                    <div class="card auth-card">
+                        <div class="card-header text-center">
+                            <h3 class="mb-0">
+                                 የማረጋገጫ የይለፍ ቃል ( Authentication)
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endwith %}
+
+                            <div class="auth-icon-container">
+                                <div class="user-icon">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="lock-container">
+                                    <i class="fas fa-lock"></i>
+                                </div>
+                            </div>
+
+                            <form method="POST" action="{{ url_for('content_auth') }}" class="auth-form">
+                                {% if is_first_time %}
+                                    <div class="mb-4">
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-key"></i>
+                                            </span>
+                                            <input type="password" class="form-control" id="content_password" name="content_password" placeholder="የይዘት ይለፍ ቃል ያዘጋጁ (Set Content Password)" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-4">
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-check-circle"></i>
+                                            </span>
+                                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="ይለፍ ቃሉን ያረጋግጡ (Confirm Password)" required>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i> ይህ ይለፍ ቃልዎ ውጤት ለማየት ያገለግላል። እባክዎ ጠንካራ ይለፍ ቃል ይምረጡ እና ደህንነቱ የተጠበቀ እንዲሆን ያድርጉ።
+                                        <br>
+                                        This password will be used to access your content. Please choose a strong password and keep it secure.
+                                    </div>
+                                {% else %}
+                                    <div class="mb-4">
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-lock"></i>
+                                            </span>
+                                            <input type="password" class="form-control" id="content_password" name="content_password" placeholder="የይዘት ይለፍ ቃል ያስገቡ (Enter Content Password)" required>
+                                        </div>
+                                    </div>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i> እባክዎ  ይለፍ ቃልዎን ያስገቡ ውጤት ለማየት።
+                                        <br>
+                                        Please enter your content access password to view your information.
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary auth-btn">
+                                        {% if is_first_time %}
+                                            <i class="fas fa-save me-2"></i>ይለፍ ቃል ያስገቡ (Set Password)
+                                        {% else %}
+                                            <i class="fas fa-sign-in-alt me-2"></i>ማረጋገጫ (Authenticate)
+                                        {% endif %}
+                                    </button>
+                                    
+                                    {% if not is_first_time %}
+                                        <button type="button" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                                            <i class="fas fa-question-circle me-2"></i>የይለፍ ቃል ረሳሁ? (Forgot Content Password?)
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-gradient text-white">
+                <h5 class="modal-title" id="forgotPasswordModalLabel">የይለፍ ቃል ለማጥፋት (Reset Content Password)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> እባክዎ የይለፍ ቃልዎን ለማስጠፋት መምህርዎን ያነጋግሩ። 
+                    <br>
+                    Please contact your teacher or administrator to reset your content password. 
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ዝጋ (Close)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-wrapper {
+        min-height: 100vh;
+        background: linear-gradient(135deg, rgba(66, 139, 202, 0.3) 0%, rgba(106, 90, 205, 0.3) 100%),
+                    url("{{ url_for('static', filename='images/culture.jpg') }}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        padding: 20px 0;
+        position: relative;
+    }
+
+    .auth-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+        pointer-events: none;
+        opacity: 0.3;
+    }
+
+    .auth-container {
+        position: relative;
+        z-index: 1;
+        margin-top: 50px;
+    }
+
+    .auth-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        animation: fadeIn 0.5s ease-in-out;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+    }
+
+    .card-header {
+        background: linear-gradient(45deg, #FF416C, #FF4B2B);
+        color: white;
+        border-radius: 15px 15px 0 0 !important;
+        padding: 1.5rem;
+        border-bottom: none;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+        animation: shine 2s infinite;
+    }
+
+    .card-header h3 {
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 0;
+        font-size: 1.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        position: relative;
+        color: #fff;
+    }
+
+    @keyframes shine {
+        0% {
+            transform: translateX(-100%);
+        }
+        50%, 100% {
+            transform: translateX(100%);
+        }
+    }
+
+    .auth-icon-container {
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+        height: 120px;
+    }
+
+    .user-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(45deg, #428bca, #6a5acd);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        animation: bounce 2s infinite;
+    }
+
+    .user-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+
+    .lock-container {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 40px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+
+    .lock-container i {
+        font-size: 1.2rem;
+        color: #dc3545;
+        transition: all 0.3s ease;
+    }
+
+    .lock-container.unlocked {
+        transform: translateX(-50%) rotate(360deg);
+        background: #28a745;
+    }
+
+    .lock-container.unlocked i {
+        color: white;
+    }
+
+    .input-group {
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .input-group-text {
+        background: linear-gradient(45deg, #FF416C, #FF4B2B);
+        border: none;
+        color: white;
+        min-width: 40px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .form-control {
+        border: none;
+        padding: 0.75rem;
+        font-size: 1rem;
+        background: white;
+    }
+
+    .form-control:focus {
+        box-shadow: none;
+        background: white;
+    }
+
+    .auth-btn {
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        background: linear-gradient(45deg, #FF416C, #FF4B2B);
+        border: none;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .auth-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {
+            transform: translateY(0);
+        }
+        40% {
+            transform: translateY(-20px);
+        }
+        60% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .alert {
+        border-radius: 8px;
+        animation: fadeIn 0.5s ease-in-out;
+        border: none;
+    }
+
+    .alert-info {
+        background: rgba(66, 139, 202, 0.1);
+        color: #2c5282;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.querySelector('input[type="password"]');
+        const lockContainer = document.querySelector('.lock-container');
+        const lockIcon = document.querySelector('.lock-container i');
+        
+        passwordInput.addEventListener('input', function() {
+            if (this.value.length > 0) {
+                lockContainer.classList.add('unlocked');
+                lockIcon.classList.remove('fa-lock');
+                lockIcon.classList.add('fa-lock-open');
+            } else {
+                lockContainer.classList.remove('unlocked');
+                lockIcon.classList.remove('fa-lock-open');
+                lockIcon.classList.add('fa-lock');
+            }
+        });
+    });
+</script>
+{% endblock %} 
