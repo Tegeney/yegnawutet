@@ -4,12 +4,9 @@ import logging
 from datetime import datetime
 from base64 import b64decode
 import requests
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from flask_caching import Cache
-from flask_compress import Compress
-from whitenoise import WhiteNoise
 from cachetools import TTLCache
 from tenacity import retry, stop_after_attempt, wait_exponential
 import sqlalchemy.exc
@@ -17,8 +14,6 @@ from functools import wraps
 from models import db, User, TeacherPost, Score, Message, Grade, Subject
 from utils.photo_manager import PhotoManager
 from sqlalchemy import func, create_engine, text
-from PIL import Image
-import io
 
 print("Using database:", os.environ.get("DATABASE_URL"))
 
@@ -43,8 +38,6 @@ logger = logging.getLogger(__name__)
 bcrypt = Bcrypt()
 login_manager = LoginManager()
 login_manager.login_view = 'login'
-cache = Cache()
-compress = Compress()
 
 # Hardcoded keys for testing - MOVE TO ENVIRONMENT VARIABLES IN PRODUCTION
 ZYTE_API_KEY = os.getenv('ZYTE_API_KEY', "10d1991606c540669fc91202a70ba7e0")
@@ -68,121 +61,28 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_size': 20,
-        'max_overflow': 40,
+        'pool_size': 10,
+        'max_overflow': 20,
         'pool_timeout': 30,
-        'pool_recycle': 1800,
-        'pool_pre_ping': True
+        'pool_recycle': 1800
     }
 
-    # Cache configuration
-    app.config['CACHE_TYPE'] = os.environ.get('CACHE_TYPE', 'redis')
-    app.config['CACHE_REDIS_URL'] = os.environ.get('REDIS_URL', 'redis://default:SDKfV73A1HqE11kEN6bZZNm1EYWY9ZmO@redis-12760.c14.us-east-1-3.ec2.redns.redis-cloud.com:12760')
-    app.config['CACHE_DEFAULT_TIMEOUT'] = 300
-    app.config['CACHE_OPTIONS'] = {
-        'CACHE_THRESHOLD': 1000,  # Maximum number of items the cache will store
-        'CACHE_KEY_PREFIX': 'kcmms_',  # Prefix for all cache keys
-    }
-
-    # Compression configuration
-    app.config['COMPRESS_ALGORITHM'] = ['br', 'gzip']  # Use both Brotli and gzip
-    app.config['COMPRESS_LEVEL'] = 6  # Compression level (1-9, higher = better compression but slower)
-    app.config['COMPRESS_MIN_SIZE'] = 500  # Only compress responses larger than this
-    app.config['COMPRESS_MIMETYPES'] = [
-        'text/html', 
-        'text/css', 
-        'text/xml', 
-        'application/json',
-        'application/javascript',
-        'image/svg+xml'
-    ]
-
-    # Static file configuration
-    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 31536000  # 1 year
-    app.config['STATIC_FOLDER'] = 'static'
-    
     # Initialize extensions
     db.init_app(app)
-    bcrypt.init_app(app)
-    login_manager.init_app(app)
-    cache.init_app(app)
-    compress.init_app(app)
+    print("SQLAlchemy initialized successfully")
+    
+    bcrypt = Bcrypt(app)
+    print("Bcrypt initialized successfully")
+    
+    login_manager = LoginManager(app)
+    login_manager.login_view = 'login'
+    print("Login manager initialized successfully")
+    
+    # Configure logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    logger.info("All extensions initialized successfully")
 
-    # Initialize WhiteNoise for static file serving
-    app.wsgi_app = WhiteNoise(
-        app.wsgi_app,
-        root='static/',
-        prefix='static/',
-        autorefresh=False,  # Disable autorefresh in production
-        max_age=31536000,  # 1 year cache
-        immutable_file_test=lambda _path, _url: True,  # Fixed lambda to accept both parameters
-        charset='utf-8',
-        # Add Brotli and gzip compression
-        add_headers_function=lambda headers, path, url: setattr(headers, '_headers', [
-            ('Cache-Control', 'public, max-age=31536000, immutable'),
-            ('Vary', 'Accept-Encoding')
-        ])
-    )
-
-    # Image optimization function
-    def optimize_image(image_data, max_size=(800, 800), quality=85):
-        try:
-            img = Image.open(io.BytesIO(image_data))
-            
-            # Convert RGBA to RGB if needed
-            if img.mode == 'RGBA':
-                background = Image.new('RGB', img.size, (255, 255, 255))
-                background.paste(img, mask=img.split()[3])
-                img = background
-            
-            # Calculate aspect ratio
-            aspect = img.size[0] / img.size[1]
-            
-            # Determine new size maintaining aspect ratio
-            if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
-                if aspect > 1:
-                    new_size = (max_size[0], int(max_size[0] / aspect))
-                else:
-                    new_size = (int(max_size[1] * aspect), max_size[1])
-                img = img.resize(new_size, Image.Resampling.LANCZOS)
-            
-            # Optimize
-            output = io.BytesIO()
-            img.save(output, 
-                    format='JPEG', 
-                    quality=quality, 
-                    optimize=True,
-                    progressive=True)  # Enable progressive loading
-            
-            # Return optimized image if it's smaller than original
-            optimized_size = output.tell()
-            original_size = len(image_data)
-            
-            if optimized_size < original_size:
-                return output.getvalue()
-            return image_data
-            
-        except Exception as e:
-            logger.error(f"Image optimization failed: {str(e)}")
-            return image_data  # Return original if optimization fails
-
-    # Cache decorator for expensive operations
-    def cache_with_key_prefix(timeout=300, key_prefix=''):
-        def decorator(f):
-            @wraps(f)
-            def decorated_function(*args, **kwargs):
-                cache_key = f"{key_prefix}:{request.path}"
-                rv = cache.get(cache_key)
-                if rv is not None:
-                    return rv
-                rv = f(*args, **kwargs)
-                cache.set(cache_key, rv, timeout=timeout)
-                return rv
-            return decorated_function
-        return decorator
-
-    # Store model references
-    app.UserModel = User
     app.TeacherPostModel = TeacherPost
     app.ScoreModel = Score
     app.MessageModel = Message
@@ -195,6 +95,21 @@ def create_app():
             print("\nCreating database tables...")
             db.create_all()
             print("Database tables created successfully")
+            
+            # Always check for and create teacher account
+            teacher = User.query.filter_by(username='tegene').first()
+            if not teacher:
+                print("\nCreating teacher account...")
+                teacher = User(
+                    username='tegene',
+                    password=bcrypt.generate_password_hash('kaffa@2024').decode('utf-8'),
+                    role='teacher',
+                    first_name='Tegene',
+                    full_name='Tegene Wondimu'
+                )
+                db.session.add(teacher)
+                db.session.commit()
+                print("Teacher account created successfully")
             
             # Check if we need to initialize default data
             admin_exists = User.query.filter_by(role='admin').first() is not None
@@ -238,17 +153,6 @@ def create_app():
                 )
                 db.session.add(admin)
                 print("Added default admin user")
-                
-                # Create default teacher user
-                teacher = User(
-                    username='tegene',
-                    password=bcrypt.generate_password_hash('kaffa@2024').decode('utf-8'),
-                    role='teacher',
-                    first_name='Tegene',
-                    full_name='Tegene Wondimu'
-                )
-                db.session.add(teacher)
-                print("Added default teacher user")
                 
                 db.session.commit()
                 print("Default data initialization complete")
@@ -365,7 +269,6 @@ def create_app():
     @app.route('/dashboard', methods=['GET'])
     @login_required
     @content_auth_required
-    @cache_with_key_prefix(timeout=60, key_prefix='dashboard')
     def dashboard():
         logger.debug(f"Dashboard accessed by {current_user.username}, role: {current_user.role}, method: {request.method}")
         if request.method == 'POST':
@@ -405,8 +308,31 @@ def create_app():
             elif current_user.role == 'teacher':
                 posts = db.session.query(TeacherPost).order_by(TeacherPost.posted_date.desc()).all()
                 students = db.session.query(User).filter_by(role='student').all()
+                
+                # Get all scores for all students
+                all_scores = {}
+                for student in students:
+                    scores = Score.query.filter_by(student_id=student.id).all()
+                    if scores:
+                        scores_by_subject = {}
+                        for score in scores:
+                            if score.subject not in scores_by_subject:
+                                scores_by_subject[score.subject] = []
+                            scores_by_subject[score.subject].append({
+                                'id': score.id,
+                                'exam_name': score.exam_name,
+                                'score': score.score,
+                                'max_score': score.max_score
+                            })
+                        all_scores[student.id] = scores_by_subject
+                
                 logger.info(f"Teacher {current_user.username} viewed dashboard with {len(students)} students")
-                return render_template('teacher_dashboard.html', user=current_user, posts=posts, students=students, current_year=2025)
+                return render_template('teacher_dashboard.html', 
+                                     user=current_user, 
+                                     posts=posts, 
+                                     students=students, 
+                                     all_scores=all_scores,
+                                     current_year=2025)
             else:  # admin
                 students = db.session.query(User).filter_by(role='student').all()
                 logger.info(f"Admin {current_user.username} viewed dashboard with {len(students)} students")
@@ -537,7 +463,6 @@ def create_app():
 
     @app.route('/chat/<int:room_id>', methods=['GET', 'POST'])
     @login_required
-    @cache_with_key_prefix(timeout=30, key_prefix='chat')
     def chat_room(room_id):
         # Get the other user in the chat
         if current_user.role == 'student':
@@ -777,59 +702,105 @@ def create_app():
             flash('ይህን ገጽ ለመጠቀም መብት የለዎትም', 'danger')
             return redirect(url_for('dashboard'))
 
-        student = User.query.get_or_404(student_id)
-        if student.role != 'student':
-            flash('ተማሪ አልተገኘም', 'danger')
-            return redirect(url_for('dashboard'))
-
-        # Get all scores for the student grouped by subject
-        scores = Score.query.filter_by(student_id=student_id).all()
-        scores_by_subject = {}
+        # Get all students
+        students = User.query.filter_by(role='student').all()
         
-        for score in scores:
-            if score.subject not in scores_by_subject:
-                scores_by_subject[score.subject] = []
-            scores_by_subject[score.subject].append({
-                'id': score.id,
-                'exam_name': score.exam_name,
-                'score': score.score,
-                'max_score': 100  # Assuming max score is 100
-            })
+        # Get scores for all students
+        all_scores = {}
+        for student in students:
+            scores = Score.query.filter_by(student_id=student.id).all()
+            if scores:
+                scores_by_subject = {}
+                for score in scores:
+                    if score.subject not in scores_by_subject:
+                        scores_by_subject[score.subject] = []
+                    scores_by_subject[score.subject].append({
+                        'id': score.id,
+                        'exam_name': score.exam_name,
+                        'score': score.score,
+                        'max_score': score.max_score
+                    })
+                all_scores[student.id] = scores_by_subject
 
         return render_template('view_student_scores.html', 
-                             student=student, 
-                             scores_by_subject=scores_by_subject)
+                             students=students,
+                             all_scores=all_scores,
+                             current_student_id=student_id)
 
-    @app.route('/update_score/<int:score_id>', methods=['GET', 'POST'])
+    @app.route('/delete_score/<int:score_id>', methods=['POST'])
+    @login_required
+    def delete_score(score_id):
+        if current_user.role not in ['teacher', 'admin']:
+            return jsonify({'success': False, 'error': 'Only teachers can delete scores'})
+        
+        try:
+            score = Score.query.get_or_404(score_id)
+            student_id = score.student_id
+            db.session.delete(score)
+            db.session.commit()
+            flash('ውጤት በተሳካ ሁኔታ ተሰርዟል', 'success')
+            return redirect(url_for('view_student_scores', student_id=student_id))
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error deleting score: {e}")
+            flash('ያልተጠበቀ ስህተት ተከስቷል', 'danger')
+            return redirect(url_for('view_student_scores', student_id=score.student_id))
+
+    @app.route('/update_score/<int:score_id>', methods=['GET', 'POST', 'PUT'])
     @login_required
     def update_score(score_id):
         if current_user.role not in ['teacher', 'admin']:
             flash('ውጤት ለመለወጥ መብት የለዎትም', 'danger')
             return redirect(url_for('dashboard'))
 
-        score = Score.query.get_or_404(score_id)
-        
-        if request.method == 'POST':
-            try:
-                new_score = int(request.form['score'])
-                if new_score < 0 or new_score > score.max_score:
-                    flash(f'ውጤት ከ0 እስከ {score.max_score} መሆን አለበት', 'danger')
+        try:
+            score = Score.query.get_or_404(score_id)
+            
+            if request.method in ['POST', 'PUT']:
+                try:
+                    # For PUT requests from AJAX
+                    if request.method == 'PUT':
+                        data = request.form
+                        new_score = float(data['score'])
+                        max_score = int(data['score_type'])
+                        if new_score < 0 or new_score > max_score:
+                            return jsonify({
+                                'success': False, 
+                                'error': f'ውጤት ከ0 እስከ {max_score} መሆን አለበት'
+                            }), 400
+                        
+                        score.score = new_score
+                        score.max_score = max_score
+                        score.exam_name = data['exam_name']
+                        score.subject = data['subject']
+                        db.session.commit()
+                        return jsonify({'success': True})
+                    
+                    # For regular POST requests from form
+                    new_score = float(request.form['score'])
+                    if new_score < 0 or new_score > score.max_score:
+                        flash(f'ውጤት ከ0 እስከ {score.max_score} መሆን አለበት', 'danger')
+                        return redirect(url_for('update_score', score_id=score_id))
+                    
+                    score.score = new_score
+                    db.session.commit()
+                    flash('ውጤት በተሳካ ሁኔታ ተሻሽሏል', 'success')
+                    return redirect(url_for('view_student_scores', student_id=score.student_id))
+                    
+                except ValueError:
+                    flash('ውጤት ቁጥር መሆን አለበት', 'danger')
                     return redirect(url_for('update_score', score_id=score_id))
-                
-                score.score = new_score
-                db.session.commit()
-                flash('ውጤት በተሳካ ሁኔታ ተሻሽሏል', 'success')
-                return redirect(url_for('view_student_scores', student_id=score.student_id))
-            except ValueError:
-                flash('ውጤት ሙሉ ቁጥር መሆን አለበት', 'danger')
-                return redirect(url_for('update_score', score_id=score_id))
-            except Exception as e:
-                db.session.rollback()
-                logger.error(f"Error updating score: {e}")
-                flash('ያልተጠበቀ ስህተት ተከስቷል', 'danger')
-                return redirect(url_for('update_score', score_id=score_id))
-        
-        return render_template('update_score.html', score=score)
+                except Exception as e:
+                    db.session.rollback()
+                    logger.error(f"Error updating score: {e}")
+                    flash('ያልተጠበቀ ስህተት ተከስቷል', 'danger')
+                    return redirect(url_for('update_score', score_id=score_id))
+            
+            return render_template('update_score.html', score=score)
+        except Exception as e:
+            logger.error(f"Error accessing score: {e}")
+            flash('ውጤቱን ማግኘት አልተቻለም', 'danger')
+            return redirect(url_for('dashboard'))
 
     @app.route('/get_unread_count')
     @login_required
@@ -1000,40 +971,6 @@ def create_app():
         
         flash('Content password changed successfully', 'success')
         return redirect(url_for('dashboard'))
-
-    @app.route('/static/<path:filename>')
-    @cache_with_key_prefix(timeout=3600, key_prefix='static')
-    def serve_static(filename):
-        return send_from_directory(app.config['STATIC_FOLDER'], filename)
-
-    # Add response compression for API endpoints
-    @app.after_request
-    def add_header(response):
-        # Cache static files for 1 year
-        if 'static/' in request.path:
-            response.cache_control.max_age = 31536000  # 1 year
-            response.cache_control.public = True
-            response.cache_control.immutable = True
-            return response
-
-        # Cache dynamic content with Redis
-        if request.method == 'GET' and response.status_code == 200:
-            # Cache dynamic content for 5 minutes with stale-while-revalidate
-            response.headers['Cache-Control'] = 'public, max-age=0, s-maxage=300, stale-while-revalidate=60'
-            # Add CDN-specific caching headers
-            response.headers['CDN-Cache-Control'] = 'public, max-age=300'
-            response.headers['Vercel-CDN-Cache-Control'] = 'public, max-age=300'
-            
-        # Add security headers
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-        response.headers['X-XSS-Protection'] = '1; mode=block'
-        
-        # Enable CORS for static assets
-        if 'static/' in request.path:
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            
-        return response
 
     return app
 
