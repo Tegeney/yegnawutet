@@ -42,8 +42,8 @@ ENV/
 *.log
 
 # User uploaded content
-static/photos/*
-!static/photos/.gitkeep
+# static/photos/
+# static/photos/
 
 # Environment variables
 .env
