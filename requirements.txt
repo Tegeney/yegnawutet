@@ -10,5 +10,11 @@ tenacity==8.2.3
 Pillow==10.2.0
 gunicorn==21.2.0
 python-dotenv==1.0.1
-
-
+psycopg2-binary>=2.9.9
+Flask-Caching==2.1.0
+Flask-Compress==1.14.0
+redis>=5.0.1
+whitenoise==6.6.0
+brotli==1.1.0
+gevent==24.2.1
+psycopg2-binary
