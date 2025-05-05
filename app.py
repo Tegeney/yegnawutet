@@ -52,7 +52,7 @@ def create_app():
     app.secret_key = os.urandom(24)
 
     # Database configuration
-    database_url = os.environ.get('DATABASE_URL', 'sqlite:///school.db')
+    database_url = os.environ.get('DATABASE_URL', 'postgresql://school-db_owner:npg_oYJtpXrN5DV8@ep-icy-rice-a4umzozc-pooler.us-east-1.aws.neon.tech/school-db?sslmode=require')
     print("\nDatabase Configuration:")
     print("====================")
     print(f"Database URL: {database_url}")
